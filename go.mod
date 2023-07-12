@@ -1,4 +1,4 @@
-module ClockTowerBackend
+module ClockTowerAPI
 
 go 1.20
 
