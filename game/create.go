@@ -3,6 +3,7 @@ package game
 import (
 	"ClockTowerAPI/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm/logger"
 	"log"
 	"math/rand"
@@ -23,8 +24,9 @@ func generateGameCode() string {
 
 func CreateGameEndpoint(ctx *gin.Context) {
 	storyUUID := ctx.GetString("uuid")
+	scriptID := ctx.GetString("scriptID")
 	gameCode := generateGameCode()
-	game := db.Game{Code: gameCode, StorytellerUUID: storyUUID}
+	game := db.Game{Code: gameCode, ScriptID: scriptID, StorytellerUUID: uuid.MustParse(storyUUID)}
 	result := db.GameDB.Create(&game)
 	if result.Error != nil {
 		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
