@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ClockTowerAPI/db"
 	"ClockTowerAPI/game"
 	"ClockTowerAPI/middleware"
 	"github.com/gin-gonic/gin"
@@ -10,13 +11,11 @@ import (
 func main() {
 
 	// TODO: Load database
-	
-	// Now usable as db from this point forward
+	db.Init()
+	// Now available as GameDB from this point forward
 
 	// Initialize webserver
 	r := gin.Default()
-
-	// TODO: convert to .env to make sure that we're able to get from multiple sources
 	r.ForwardedByClientIP = true
 	err := r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
