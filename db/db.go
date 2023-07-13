@@ -22,10 +22,18 @@ func Init() {
 		log.Fatalf("Could not connect to database: %s", connErr.Error())
 	}
 
-	migrateErr := db.AutoMigrate(&Game{}, &GamePlayer{}, &Action{})
-	if migrateErr != nil {
-		log.Fatalf("Could not migrate database: %s", migrateErr.Error())
-	}
+	go func() {
+		err := db.AutoMigrate(&GamePlayer{})
+
+		if err != nil {
+			log.Fatalf("Could not migrate database: %s", err.Error())
+		}
+		err2 := db.AutoMigrate(&Game{})
+		if err2 != nil {
+			log.Fatalf("Could not migrate database: %s", err2.Error())
+		}
+
+	}()
 
 	GameDB = db
 }

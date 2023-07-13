@@ -8,13 +8,7 @@ import (
 	"net/http"
 )
 
-func main() {
-
-	// TODO: Load database
-	db.Init()
-	// Now available as GameDB from this point forward
-
-	// Initialize webserver
+func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.ForwardedByClientIP = true
 	err := r.SetTrustedProxies([]string{"127.0.0.1"})
@@ -35,5 +29,16 @@ func main() {
 		gameGroup.POST("/create", game.CreateGameEndpoint)
 	}
 
+	return r
+}
+
+func main() {
+
+	// TODO: Load database
+	db.Init()
+	// Now available as GameDB from this point forward
+
+	// Initialize webserver
+	r := SetupRouter()
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
