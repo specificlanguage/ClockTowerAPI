@@ -32,6 +32,7 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	reqErr := ctx.BindJSON(&createGame)
 	if reqErr != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Missing scriptID"})
+		return
 	}
 
 	gameCode := generateGameCode()
