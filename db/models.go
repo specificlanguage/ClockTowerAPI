@@ -7,7 +7,7 @@ import (
 
 type Game struct {
 	ID              uint
-	Code            string
+	Code            string `gorm:"unique"`
 	ScriptID        string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time

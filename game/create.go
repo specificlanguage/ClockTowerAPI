@@ -12,6 +12,10 @@ import (
 
 var letters = []rune("1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+type CreateGameBody struct {
+	ScriptId string `json:"scriptID"`
+}
+
 func generateGameCode() string {
 
 	b := make([]rune, 6)
@@ -23,10 +27,15 @@ func generateGameCode() string {
 }
 
 func CreateGameEndpoint(ctx *gin.Context) {
+	var createGame CreateGameBody
 	storyUUID := ctx.GetString("uuid")
-	scriptID := ctx.GetString("scriptID")
+	reqErr := ctx.BindJSON(&createGame)
+	if reqErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Missing scriptID"})
+	}
+
 	gameCode := generateGameCode()
-	game := db.Game{Code: gameCode, ScriptID: scriptID, StorytellerUUID: uuid.MustParse(storyUUID)}
+	game := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
 	result := db.GameDB.Create(&game)
 	if result.Error != nil {
 		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
