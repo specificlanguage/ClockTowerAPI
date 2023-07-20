@@ -1,4 +1,4 @@
-package game
+package http
 
 import (
 	"ClockTowerAPI/db"

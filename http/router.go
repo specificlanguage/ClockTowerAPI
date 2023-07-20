@@ -2,10 +2,14 @@ package http
 
 import (
 	"ClockTowerAPI/game"
+	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/olahol/melody"
 	"net/http"
 )
+
+var Mel = melody.New()
 
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
@@ -35,8 +39,19 @@ func SetupRouter() *gin.Engine {
 	gameGroup := router.Group("/game/")
 	gameGroup.Use(UUIDRequired())
 	{
-		gameGroup.POST("/create", game.CreateGameEndpoint)
+		gameGroup.GET("/:id", InteractEndpoint)
+		gameGroup.POST("/create", CreateGameEndpoint)
 	}
+
+	Mel.HandleConnect(func(s *melody.Session) {
+		clientUUID := s.MustGet("uuid")
+		gid := s.MustGet("gid")
+		Mel.Broadcast([]byte(fmt.Sprintf("%s connected to game %s", clientUUID, gid)))
+	})
+
+	Mel.HandleMessage(func(s *melody.Session, msg []byte) {
+		Mel.Broadcast(msg)
+	})
 
 	return router
 }
