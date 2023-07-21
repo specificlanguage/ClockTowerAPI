@@ -49,6 +49,9 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	go game.GameHandler(&sess)
 	go Dispatcher(outChannel)
 
+	// Make router recognize this game exists
+	Games[gameCode] = &sess
+
 	if result.Error != nil {
 		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})

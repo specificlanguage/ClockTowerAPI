@@ -51,3 +51,27 @@ func GameHandler(gh *GameSess) {
 func AddPlayerToGame() {
 
 }
+
+// M - Alias for MakeMessage
+func M(msgType string, message map[string]any, clients []uuid.UUID) MessageToClient {
+	return MakeMessage(msgType, message, clients)
+}
+
+// MakeMessage - Creates a MessageToClient item for use
+func MakeMessage(msgType string, message map[string]any, clients []uuid.UUID) MessageToClient {
+	msgBytes, _ := json.Marshal(message)
+	return MessageToClient{
+		Message: Message{Type: msgType, Message: msgBytes},
+		UUIDs:   clients,
+	}
+}
+
+func GetUUIDS(sess *GameSess) *[]uuid.UUID {
+	uuids := make([]uuid.UUID, len(sess.Clients))
+	i := 0
+	for _, player := range sess.Clients {
+		uuids[i] = player.UUID
+		i += 1
+	}
+	return &uuids
+}

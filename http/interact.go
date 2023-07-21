@@ -14,6 +14,7 @@ func InteractEndpoint(ctx *gin.Context) {
 
 	if gameID == "" {
 		ctx.JSON(400, gin.H{"message": "Did not provide game code"})
+		return
 	}
 
 	// TODO: query for game in database
@@ -21,6 +22,7 @@ func InteractEndpoint(ctx *gin.Context) {
 	clientUUID, uuidErr := uuid.Parse(ctx.GetString("uuid"))
 	if uuidErr != nil {
 		ctx.JSON(403, gin.H{"message": "Did not provide UUID in headers"})
+		return
 	}
 
 	// TODO: check if players are full in game
@@ -29,5 +31,6 @@ func InteractEndpoint(ctx *gin.Context) {
 	err := Mel.HandleRequestWithKeys(ctx.Writer, ctx.Request, gin.H{"uuid": clientUUID, "gid": gameID})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not instantiate Websocket"})
+		return
 	}
 }

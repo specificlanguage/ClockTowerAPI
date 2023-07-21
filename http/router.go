@@ -56,18 +56,19 @@ func SetupRouter() *gin.Engine {
 
 	// Websocket handlers here
 	Mel.HandleConnect(func(s *melody.Session) {
-		clientUUID := uuid.MustParse(s.MustGet("uuid").(string)) // Convert to string
+		fmt.Println(s.MustGet("uuid"))
+		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
 		gid := s.MustGet("gid").(string)
 		cl := Client{clientUUID, gid, s}
 		Clients[clientUUID] = &cl
-		// gameCoord := Games[gid]
-		// gameCoord.Clients[clientUUID.String()] = clientUUID
-		gameSessions := GetSessionsFromGameID(gid)
-		Mel.BroadcastMultiple([]byte(fmt.Sprintf("%s connected to game %s", clientUUID, gid)), gameSessions)
+		gameCoord := Games[gid]
+
+		gameCoord.OutChannel <- game.M(game.CLIENT_JOIN, gin.H{"message": fmt.Sprintf("%s connected to game %s", clientUUID, gid)}, *game.GetUUIDS(gameCoord))
+		gameCoord.Clients[clientUUID.String()] = game.Player{GameID: gid, UUID: clientUUID}
 	})
 
 	Mel.HandleMessage(func(s *melody.Session, msg []byte) {
-		clientUUID := uuid.MustParse(s.MustGet("uuid").(string)) // Convert to string
+		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
 		gid := s.MustGet("gid").(string)
 		gameCoord := Games[gid]
 		sentMsg := make(map[string]interface{})
@@ -75,17 +76,16 @@ func SetupRouter() *gin.Engine {
 
 		if err != nil {
 			errMsg := gin.H{"message": "Could not parse message"}
-			raw, _ := json.Marshal(errMsg)
-			gameCoord.OutChannel <- game.MessageToClient{
-				Message: game.Message{Type: "ERROR", Message: raw},
-				UUIDs:   []uuid.UUID{clientUUID}}
-		}
+			gameCoord.OutChannel <- game.M(game.ERROR, errMsg, []uuid.UUID{clientUUID})
+		} else {
+			// Just acknowledgement of message for debugging purposes.
+			if gin.Mode() == gin.TestMode {
+				Mel.BroadcastMultiple([]byte(fmt.Sprintf("Message acknowledged")), []*melody.Session{s})
+			}
 
-		// Just acknowledgement of message if not done.
-		if gin.Mode() == gin.TestMode {
-			Mel.BroadcastMultiple([]byte(fmt.Sprintf("Message acknowledged")), []*melody.Session{s})
+			sentMsg["uuid"] = clientUUID // Easier identification
+			gameCoord.InChannel <- sentMsg
 		}
-		gameCoord.InChannel <- sentMsg
 	})
 
 	return router
