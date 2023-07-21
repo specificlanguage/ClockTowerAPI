@@ -2,6 +2,7 @@ package http
 
 import (
 	"ClockTowerAPI/db"
+	game "ClockTowerAPI/game"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm/logger"
@@ -36,8 +37,18 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	}
 
 	gameCode := generateGameCode()
-	game := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
-	result := db.GameDB.Create(&game)
+	game_db := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
+	result := db.GameDB.Create(&game_db)
+
+	inChannel := make(chan map[string]interface{})
+	outChannel := make(chan game.MessageToClient)
+
+	sess := game.GameSess{Code: gameCode, Clients: map[string]game.Player{}, InChannel: inChannel, OutChannel: outChannel}
+
+	// Start one thread for game logic, another for dispatching out to the clients.
+	go game.GameHandler(&sess)
+	go Dispatcher(outChannel)
+
 	if result.Error != nil {
 		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})

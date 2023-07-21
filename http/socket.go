@@ -1,9 +1,8 @@
 package http
 
 import (
-	"ClockTowerAPI/game/roles"
+	"ClockTowerAPI/game"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/olahol/melody"
 	"time"
@@ -12,77 +11,52 @@ import (
 const timeoutPeriod = 20 * time.Minute
 
 type Client struct {
-	uuid       uuid.UUID
-	name       string
-	websession *melody.Session
-	role       roles.Role // please note that "nil" means that the client is the storyteller.
+	UUID       uuid.UUID
+	GameID     string
+	Websession *melody.Session
 }
 
-type GameSess struct {
-	code       string
-	clients    map[string]Client
-	inChannel  chan map[string]interface{} // Generic info channel to send information to send. Will specify type later.
-	outChannel chan MessageToClient
-}
-
-type MessageToClient struct {
-	msg         Message
-	clientUUIDs []uuid.UUID
-}
-
-type Message struct {
-	Type  string          `json:"type"`
-	Value json.RawMessage `json:"message"`
-}
-
-// GameSessHandler is a Goroutine that should only handle one game at a time. Please be careful!
-// The intention is that this will autodelete after an hr or so, but for now it will continue to keep going.
-func GameSessHandler(gh *GameSess) {
+// Dispatcher is a Goroutine that sends out all messages for a single game. Please be careful!
+func Dispatcher(sendChannel chan game.MessageToClient) {
 
 	timer := time.NewTicker(timeoutPeriod)
 
-	go func(gh *GameSess) {
-
-		defer func() {
-			msg, err := json.Marshal(Message{
-				Type:  "DISCONNECT",
-				Value: json.RawMessage("Room timed out, disconnect"),
-			})
-
-			if err != nil {
-				fmt.Println()
-				for _, sess := range GetClientSessions(gh.clients) {
-					sess.Close()
-				}
-			} else {
-				for _, sess := range GetClientSessions(gh.clients) {
-					sess.CloseWithMsg(msg)
-				}
-			}
-		}()
-
-		for {
-			select {
-			case msg := <-gh.inChannel: // Should come from the Melody handler
-				timer.Reset(timeoutPeriod) // Reset timeout timer, something happened.
-				fmt.Println(msg)
-			case msg := <-gh.outChannel: // Should come from the game loop
-				timer.Reset(timeoutPeriod)
-				fmt.Println(msg)
-			case <-timer.C: // No activity, timing out.
-				return
-			}
+	for {
+		select {
+		case msg := <-sendChannel: // Should come from the game loop
+			timer.Reset(timeoutPeriod)
+			msgJSON, _ := json.Marshal(msg.Message)
+			Mel.BroadcastMultiple(msgJSON, GetSessionsFromUUID(msg.UUIDs))
+		case <-timer.C: // No activity, timing out.
+			return
 		}
-
-	}(gh)
-
+	}
 }
 
-func GetClientSessions(clients map[string]Client) []melody.Session {
-	sessions := make([]melody.Session, len(clients))
-	i := 0
-	for _, client := range clients {
-		sessions[i] = *client.websession
+// Utility functions below to get sessions from various methods.
+
+func GetSessionsFromClient(clients []Client) []*melody.Session {
+	sessions := make([]*melody.Session, len(clients))
+	for i, client := range clients {
+		sessions[i] = client.Websession
+	}
+	return sessions
+}
+
+func GetSessionsFromUUID(uuids []uuid.UUID) []*melody.Session {
+	sessions := make([]*melody.Session, len(uuids))
+	for i, uuid := range uuids {
+		sessions[i] = Clients[uuid].Websession
+	}
+	return sessions
+}
+
+func GetSessionsFromGameID(gameID string) []*melody.Session {
+	sessions := make([]*melody.Session, 0)
+	for _, client := range Clients {
+		if client.GameID == gameID {
+			sessions = append(sessions, client.Websession)
+		}
 	}
 	return sessions
 }
