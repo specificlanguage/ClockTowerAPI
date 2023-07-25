@@ -41,16 +41,15 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	result := db.GameDB.Create(&game_db)
 
 	inChannel := make(chan map[string]interface{})
-	outChannel := make(chan game.MessageToClient)
+	outChannel := OutChannel
 
-	sess := game.GameSess{Code: gameCode, Clients: map[string]game.Player{}, InChannel: inChannel, OutChannel: outChannel}
+	sess := game.GameSess{Code: gameCode, Clients: make(map[uuid.UUID]game.Player), InChannel: inChannel, OutChannel: outChannel}
 
-	// Start one thread for game logic, another for dispatching out to the clients.
-	go game.GameHandler(&sess)
-	go Dispatcher(outChannel)
+	// Start one thread for game logic
+	go game.GameHandler(sess)
 
 	// Make router recognize this game exists
-	Games[gameCode] = &sess
+	Games[gameCode] = sess
 
 	if result.Error != nil {
 		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())

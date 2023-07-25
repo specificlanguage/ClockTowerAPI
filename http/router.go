@@ -12,8 +12,8 @@ import (
 )
 
 var Mel = melody.New()
-var Clients = make(map[uuid.UUID]*Client)
-var Games = make(map[string]*game.GameSess)
+var Games = make(map[string]game.GameSess)
+var OutChannel = make(chan game.MessageToClient)
 
 func UUIDRequired() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -54,39 +54,84 @@ func SetupRouter() *gin.Engine {
 		gameGroup.POST("/create", CreateGameEndpoint)
 	}
 
+	go Dispatcher()
+
 	// Websocket handlers here
 	Mel.HandleConnect(func(s *melody.Session) {
 		fmt.Println(s.MustGet("uuid"))
 		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
 		gid := s.MustGet("gid").(string)
-		cl := Client{clientUUID, gid, s}
-		Clients[clientUUID] = &cl
-		gameCoord := Games[gid]
+		name := s.MustGet("name").(string)
+		gameSess := s.MustGet("game").(game.GameSess)
 
-		gameCoord.OutChannel <- game.M(game.CLIENT_JOIN, gin.H{"message": fmt.Sprintf("%s connected to game %s", clientUUID, gid)}, *game.GetUUIDS(gameCoord))
-		gameCoord.Clients[clientUUID.String()] = game.Player{GameID: gid, UUID: clientUUID}
+		// Send notification to all existing clients
+		gameSess.OutChannel <- game.M(
+			game.CLIENT_JOIN,
+			gin.H{"name": name, "uuid": clientUUID, "gameID": gid},
+			game.GetConnectedClientsUUIDs(gameSess),
+			gid)
+
+		// Send info about all players
+		gameSess.OutChannel <- game.M(
+			game.MESSAGE,
+			gin.H{"players": gameSess.Clients},
+			game.SingleToMap(clientUUID),
+			gameSess.Code)
+
 	})
 
 	Mel.HandleMessage(func(s *melody.Session, msg []byte) {
 		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
-		gid := s.MustGet("gid").(string)
-		gameCoord := Games[gid]
-		sentMsg := make(map[string]interface{})
-		err := json.Unmarshal(msg, &sentMsg)
-
-		if err != nil {
-			errMsg := gin.H{"message": "Could not parse message"}
-			gameCoord.OutChannel <- game.M(game.ERROR, errMsg, []uuid.UUID{clientUUID})
-		} else {
-			// Just acknowledgement of message for debugging purposes.
-			if gin.Mode() == gin.TestMode {
-				Mel.BroadcastMultiple([]byte(fmt.Sprintf("Message acknowledged")), []*melody.Session{s})
-			}
-
-			sentMsg["uuid"] = clientUUID // Easier identification
-			gameCoord.InChannel <- sentMsg
+		gameSess := s.MustGet("game").(game.GameSess)
+		val := make(map[string]interface{})
+		if err := json.Unmarshal(msg, &val); err != nil {
+			gameSess.OutChannel <- game.M(
+				game.ERROR,
+				gin.H{"message": "Could not parse JSON"},
+				game.SingleToMap(clientUUID),
+				gameSess.Code)
+			return
 		}
+
+		gameSess.InChannel <- val
+	})
+
+	// Notify all clients that a disconnect occurred. We don't remove it from gameSess in the case of a reconnect
+	Mel.HandleDisconnect(func(s *melody.Session) {
+		gameSess := s.MustGet("game").(game.GameSess)
+		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
+		// Set disconnected
+		player := gameSess.Clients[clientUUID]
+		player.IsConnected = false
+		gameSess.Clients[clientUUID] = player
+
+		gameSess.OutChannel <- game.M(
+			game.CLIENT_DISCONNECT,
+			gin.H{"name": player.Name, "uuid": clientUUID, "gameID": player.GameID},
+			game.GetConnectedClientsUUIDs(gameSess),
+			gameSess.Code,
+		)
 	})
 
 	return router
+}
+
+// Dispatcher - Goroutine that handles all outgoing messages
+func Dispatcher() {
+	for {
+		select {
+		case msg := <-OutChannel:
+			msgJSON, _ := json.Marshal(msg.Message)
+			Mel.BroadcastFilter(msgJSON,
+				func(session *melody.Session) bool {
+					clientUUID := session.MustGet("uuid").(uuid.UUID) // Convert to string
+					gid := session.MustGet("gid").(string)
+					if _, ok := msg.UUIDs[clientUUID]; ok && msg.GameID == gid && !session.IsClosed() {
+						return true
+					}
+					return false
+				},
+			)
+		}
+	}
 }
