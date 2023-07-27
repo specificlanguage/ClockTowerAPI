@@ -46,11 +46,11 @@ func SetupRouter() *gin.Engine {
 	})
 
 	router.GET("/script", game.GetScriptInfoEndpoint)
+	router.GET("/game/:id", InteractEndpoint)
 
 	gameGroup := router.Group("/game/")
 	gameGroup.Use(UUIDRequired())
 	{
-		gameGroup.GET("/:id", InteractEndpoint)
 		gameGroup.POST("/create", CreateGameEndpoint)
 	}
 

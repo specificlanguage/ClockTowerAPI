@@ -22,9 +22,7 @@ func InteractEndpoint(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: query for gameSess in database
-
-	clientUUID, uuidErr := uuid.Parse(ctx.GetString("uuid"))
+	clientUUID, uuidErr := uuid.Parse(ctx.Query("uuid"))
 	if uuidErr != nil {
 		ctx.JSON(401, gin.H{"message": "Did not provide UUID in headers"})
 		return
