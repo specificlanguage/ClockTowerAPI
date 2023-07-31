@@ -34,7 +34,7 @@ func SetupRouter() *gin.Engine {
 
 	// CORS
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowOrigins = []string{"http://localhost:5173"}
 	config.AllowHeaders = []string{"*"}
 	router.Use(cors.New(config))
 
@@ -58,59 +58,64 @@ func SetupRouter() *gin.Engine {
 
 	// Websocket handlers here
 	Mel.HandleConnect(func(s *melody.Session) {
-		fmt.Println(s.MustGet("uuid"))
-		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
-		gid := s.MustGet("gid").(string)
-		name := s.MustGet("name").(string)
-		gameSess := s.MustGet("game").(game.GameSess)
+		go func() {
+			fmt.Println(s.MustGet("uuid"))
+			clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
+			gid := s.MustGet("gid").(string)
+			name := s.MustGet("name").(string)
+			gameSess := s.MustGet("game").(game.GameSess)
 
-		// Send notification to all existing clients
-		gameSess.OutChannel <- game.M(
-			game.CLIENT_JOIN,
-			gin.H{"name": name, "uuid": clientUUID, "gameID": gid},
-			game.GetConnectedClientsUUIDs(gameSess),
-			gid)
+			// Send notification to all existing clients
+			gameSess.OutChannel <- game.M(
+				game.CLIENT_JOIN,
+				gin.H{"name": name, "uuid": clientUUID, "gameID": gid},
+				game.GetConnectedClientsUUIDs(gameSess),
+				gid)
 
-		// Send info about all players
-		gameSess.OutChannel <- game.M(
-			game.MESSAGE,
-			gin.H{"players": gameSess.Clients},
-			game.SingleToMap(clientUUID),
-			gameSess.Code)
-
+			// Send info about all players
+			gameSess.OutChannel <- game.M(
+				game.GAME_INFO,
+				gin.H{"players": game.GetPlayers(gameSess)},
+				game.SingleToMap(clientUUID),
+				gameSess.Code)
+		}()
 	})
 
 	Mel.HandleMessage(func(s *melody.Session, msg []byte) {
-		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
-		gameSess := s.MustGet("game").(game.GameSess)
-		val := make(map[string]interface{})
-		if err := json.Unmarshal(msg, &val); err != nil {
-			gameSess.OutChannel <- game.M(
-				game.ERROR,
-				gin.H{"message": "Could not parse JSON"},
-				game.SingleToMap(clientUUID),
-				gameSess.Code)
-			return
-		}
+		go func() {
+			clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
+			gameSess := s.MustGet("game").(game.GameSess)
+			val := make(map[string]interface{})
+			if err := json.Unmarshal(msg, &val); err != nil {
+				gameSess.OutChannel <- game.M(
+					game.ERROR,
+					gin.H{"message": "Could not parse JSON"},
+					game.SingleToMap(clientUUID),
+					gameSess.Code)
+				return
+			}
 
-		gameSess.InChannel <- val
+			gameSess.InChannel <- val
+		}()
 	})
 
 	// Notify all clients that a disconnect occurred. We don't remove it from gameSess in the case of a reconnect
 	Mel.HandleDisconnect(func(s *melody.Session) {
-		gameSess := s.MustGet("game").(game.GameSess)
-		clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
-		// Set disconnected
-		player := gameSess.Clients[clientUUID]
-		player.IsConnected = false
-		gameSess.Clients[clientUUID] = player
+		go func() {
+			gameSess := s.MustGet("game").(game.GameSess)
+			clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
+			// Set disconnected
+			player := gameSess.Clients[clientUUID]
+			player.IsConnected = false
+			gameSess.Clients[clientUUID] = player
 
-		gameSess.OutChannel <- game.M(
-			game.CLIENT_DISCONNECT,
-			gin.H{"name": player.Name, "uuid": clientUUID, "gameID": player.GameID},
-			game.GetConnectedClientsUUIDs(gameSess),
-			gameSess.Code,
-		)
+			gameSess.OutChannel <- game.M(
+				game.CLIENT_DISCONNECT,
+				gin.H{"name": player.Name, "uuid": clientUUID, "gameID": player.GameID},
+				game.GetConnectedClientsUUIDs(gameSess),
+				gameSess.Code,
+			)
+		}()
 	})
 
 	return router

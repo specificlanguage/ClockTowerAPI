@@ -4,6 +4,7 @@ import (
 	"ClockTowerAPI/game/roles"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -15,12 +16,27 @@ const (
 	GAME_INFO         = "GAME_INFO"
 )
 
+const (
+	LOADING      = "LOADING"      // Default when entering room
+	GAME_LOBBY   = "LOBBY"        // Landing page on lobby
+	NIGHT        = "NIGHT"        // Most logic will happen at night
+	POSTNIGHT    = "POSTNIGHT"    // Should be used for post
+	DAY          = "DAY"          // General deliberation for the day
+	NOMINATE     = "NOMINATE"     // Nominating voters
+	DELIBERATION = "DELIBERATION" // Should be used as a stopgap between nominations and voting
+	VOTING       = "VOTING"
+	POSTVOTE     = "POSTVOTE" // Should be used for resolution events regarding the voting, and special roles like Vizier
+	POSTDAY      = "POSTDAY"
+)
+
 type Player struct {
 	UUID        uuid.UUID
 	Name        string
 	GameID      string
 	Role        roles.Role // please note that "nil" means that the client is the storyteller.
 	IsConnected bool
+	IsDrunk     bool
+	IsPoisoned  bool
 }
 
 type GameSess struct {
@@ -28,6 +44,11 @@ type GameSess struct {
 	Clients    map[uuid.UUID]Player
 	InChannel  chan map[string]interface{} // Generic info channel to send information to send. Will specify type later.
 	OutChannel chan MessageToClient
+	Phase      string
+}
+
+type GameState struct {
+	Phase string
 }
 
 type MessageToClient struct {
@@ -74,4 +95,14 @@ func GetConnectedClientsUUIDs(sess GameSess) map[uuid.UUID]any {
 		}
 	}
 	return uuids
+}
+
+// GetPlayers should only be used for non-Storyteller information
+func GetPlayers(sess GameSess) map[string]any {
+	players := make(map[string]any)
+	for _, player := range sess.Clients {
+		player_redacted := gin.H{"uuid": player.UUID, "name": player.Name}
+		players[player.UUID.String()] = player_redacted
+	}
+	return players
 }

@@ -43,7 +43,7 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	inChannel := make(chan map[string]interface{})
 	outChannel := OutChannel
 
-	sess := game.GameSess{Code: gameCode, Clients: make(map[uuid.UUID]game.Player), InChannel: inChannel, OutChannel: outChannel}
+	sess := game.GameSess{Code: gameCode, Clients: make(map[uuid.UUID]game.Player), InChannel: inChannel, OutChannel: outChannel, Phase: game.GAME_LOBBY}
 
 	// Start one thread for game logic
 	go game.GameHandler(sess)

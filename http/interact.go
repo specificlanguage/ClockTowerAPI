@@ -35,6 +35,9 @@ func InteractEndpoint(ctx *gin.Context) {
 	}
 
 	if cl, ok := gameSess.Clients[clientUUID]; ok {
+		if cl.IsConnected {
+			ctx.JSON(500, gin.H{"message": "Already connected"})
+		}
 		// Reconnected
 		cl.IsConnected = true
 		gameSess.Clients[clientUUID] = cl
