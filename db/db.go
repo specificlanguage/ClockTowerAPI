@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -36,4 +37,14 @@ func Init() {
 	}()
 
 	GameDB = db
+}
+
+// GetGameByID - Retrieves a game from the database from a given ID.
+func GetGameByID(gameID string) *Game {
+	var game Game
+	result := GameDB.Where("code = ?", gameID).First(&game)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	return &game
 }

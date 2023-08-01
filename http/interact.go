@@ -1,6 +1,7 @@
 package http
 
 import (
+	"ClockTowerAPI/db"
 	"ClockTowerAPI/game"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -43,11 +44,23 @@ func InteractEndpoint(ctx *gin.Context) {
 		gameSess.Clients[clientUUID] = cl
 	} else {
 		// New player
-		if len(gameSess.Clients) >= 16 {
+		if len(gameSess.Clients) > 16 {
 			ctx.JSON(401, gin.H{"message": "Game is full"})
 			return
 		}
-		gameSess.Clients[clientUUID] = game.Player{UUID: clientUUID, Name: name, IsConnected: true}
+
+		// Check if storyteller, which means going to the DB
+		gameEntry := db.GetGameByID(gameID)
+		if gameEntry == nil {
+			ctx.JSON(400, gin.H{"message": "Game does not exist"})
+			return
+		}
+
+		if clientUUID != gameEntry.StorytellerUUID {
+			gameSess.Clients[clientUUID] = game.Player{UUID: clientUUID, Name: name, IsConnected: true}
+		} else {
+			gameSess.Clients[clientUUID] = game.Player{UUID: clientUUID, Name: name, IsConnected: true, IsStoryteller: true}
+		}
 	}
 
 	// Upgrades request

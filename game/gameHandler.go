@@ -30,13 +30,14 @@ const (
 )
 
 type Player struct {
-	UUID        uuid.UUID
-	Name        string
-	GameID      string
-	Role        roles.Role // please note that "nil" means that the client is the storyteller.
-	IsConnected bool
-	IsDrunk     bool
-	IsPoisoned  bool
+	UUID          uuid.UUID
+	Name          string
+	GameID        string
+	Role          roles.Role // please note that "nil" means that the client is the storyteller.
+	IsStoryteller bool
+	IsConnected   bool
+	IsDrunk       bool
+	IsPoisoned    bool
 }
 
 type GameSess struct {
@@ -97,12 +98,16 @@ func GetConnectedClientsUUIDs(sess GameSess) map[uuid.UUID]any {
 	return uuids
 }
 
-// GetPlayers should only be used for non-Storyteller information
+// GetPlayers - Returns a list of all players with only name, uuid, and isStoryteller.
+// Should only be used for non-Storyteller information
 func GetPlayers(sess GameSess) map[string]any {
 	players := make(map[string]any)
 	for _, player := range sess.Clients {
-		player_redacted := gin.H{"uuid": player.UUID, "name": player.Name}
-		players[player.UUID.String()] = player_redacted
+		playerRedacted := gin.H{"uuid": player.UUID, "name": player.Name}
+		if player.IsStoryteller {
+			playerRedacted["isStoryteller"] = true
+		}
+		players[player.UUID.String()] = playerRedacted
 	}
 	return players
 }

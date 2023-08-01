@@ -66,13 +66,18 @@ func SetupRouter() *gin.Engine {
 			gameSess := s.MustGet("game").(game.GameSess)
 
 			// Send notification to all existing clients
+			joinMessage := gin.H{"name": name, "uuid": clientUUID, "gameID": gid}
+			if gameSess.Clients[clientUUID].IsStoryteller {
+				joinMessage["isStoryteller"] = true
+			}
+
 			gameSess.OutChannel <- game.M(
 				game.CLIENT_JOIN,
-				gin.H{"name": name, "uuid": clientUUID, "gameID": gid},
+				joinMessage,
 				game.GetConnectedClientsUUIDs(gameSess),
 				gid)
 
-			// Send info about all players
+			// Send info about all players to the newly joined client
 			gameSess.OutChannel <- game.M(
 				game.GAME_INFO,
 				gin.H{"players": game.GetPlayers(gameSess)},
