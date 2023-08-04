@@ -80,7 +80,7 @@ func SetupRouter() *gin.Engine {
 			// Send info about all players to the newly joined client
 			gameSess.OutChannel <- game.M(
 				game.GAME_INFO,
-				gin.H{"players": game.GetPlayers(gameSess)},
+				gin.H{"players": game.GetConnectedPlayers(gameSess)},
 				game.SingleToMap(clientUUID),
 				gameSess.Code)
 		}()

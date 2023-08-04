@@ -98,16 +98,18 @@ func GetConnectedClientsUUIDs(sess GameSess) map[uuid.UUID]any {
 	return uuids
 }
 
-// GetPlayers - Returns a list of all players with only name, uuid, and isStoryteller.
+// GetConnectedPlayers - Returns a list of all connected players with only name, uuid, and isStoryteller.
 // Should only be used for non-Storyteller information
-func GetPlayers(sess GameSess) map[string]any {
+func GetConnectedPlayers(sess GameSess) map[string]any {
 	players := make(map[string]any)
 	for _, player := range sess.Clients {
 		playerRedacted := gin.H{"uuid": player.UUID, "name": player.Name}
 		if player.IsStoryteller {
 			playerRedacted["isStoryteller"] = true
 		}
-		players[player.UUID.String()] = playerRedacted
+		if player.IsConnected {
+			players[player.UUID.String()] = playerRedacted
+		}
 	}
 	return players
 }

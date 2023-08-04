@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"strings"
 )
 
 func InteractEndpoint(ctx *gin.Context) {
@@ -17,6 +18,7 @@ func InteractEndpoint(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"message": "Did not provide gameSess code"})
 		return
 	}
+	gameID = strings.ToUpper(gameID) // In case it's a lowercase item
 
 	if name == "" {
 		ctx.JSON(400, gin.H{"message": "Provide name in params"})
