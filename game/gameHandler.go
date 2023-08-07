@@ -1,7 +1,6 @@
 package game
 
 import (
-	"ClockTowerAPI/game/roles"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -33,7 +32,7 @@ type Player struct {
 	UUID          uuid.UUID
 	Name          string
 	GameID        string
-	Role          roles.Role // please note that "nil" means that the client is the storyteller.
+	Role          Role // please note that "nil" means that the client is the storyteller.
 	IsStoryteller bool
 	IsConnected   bool
 	IsDrunk       bool

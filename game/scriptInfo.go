@@ -1,7 +1,6 @@
 package game
 
 import (
-	"ClockTowerAPI/game/roles"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -18,7 +17,7 @@ func GetScriptInfoEndpoint(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Script not available, use 'trouble_brewing'"})
 	}
 
-	descriptions, err := roles.GetAllRoleDescriptions()
+	descriptions, err := GetAllRoleDescriptions()
 	if err != nil {
 		fmt.Println(err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not load role descriptions"})

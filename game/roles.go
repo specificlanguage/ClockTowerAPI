@@ -1,8 +1,9 @@
-package roles
+package game
 
 import (
 	"encoding/json"
 	"errors"
+	"math/rand"
 	"os"
 )
 
@@ -62,4 +63,18 @@ func GetAllRoleDescriptions() ([]RoleView, error) {
 		return nil, unmarshalErr
 	}
 	return roleData, nil
+}
+
+func ShuffleRoles(roles []Role, players *[]Player) {
+	for i, _ := range roles {
+		j := rand.Intn(len(roles) - i)
+		temp := roles[i]
+		roles[j] = roles[i]
+		roles[i] = temp
+	}
+
+	for i, player := range *players {
+		player.Role = roles[i]
+	}
+
 }
