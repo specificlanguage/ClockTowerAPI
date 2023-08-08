@@ -40,7 +40,7 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	game_db := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
 	result := db.GameDB.Create(&game_db)
 
-	inChannel := make(chan map[string]interface{})
+	inChannel := make(chan game.MessageFromClient)
 	outChannel := OutChannel
 
 	sess := game.GameSess{Code: gameCode, Clients: make(map[uuid.UUID]game.Player), InChannel: inChannel, OutChannel: outChannel, Phase: game.GAME_LOBBY}

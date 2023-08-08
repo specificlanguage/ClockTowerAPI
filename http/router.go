@@ -90,17 +90,17 @@ func SetupRouter() *gin.Engine {
 		go func() {
 			clientUUID := s.MustGet("uuid").(uuid.UUID) // Convert to string
 			gameSess := s.MustGet("game").(game.GameSess)
-			val := make(map[string]interface{})
-			if err := json.Unmarshal(msg, &val); err != nil {
+			C2SMsg, err := game.P(msg, gameSess, clientUUID) // Parse incoming message
+			if err != nil {
 				gameSess.OutChannel <- game.M(
 					game.ERROR,
-					gin.H{"message": "Could not parse JSON"},
+					gin.H{"message": "Could not parse message"},
 					game.SingleToMap(clientUUID),
 					gameSess.Code)
 				return
 			}
 
-			gameSess.InChannel <- val
+			gameSess.InChannel <- *C2SMsg
 		}()
 	})
 
