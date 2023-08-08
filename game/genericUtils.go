@@ -41,3 +41,13 @@ func MapValsToList[K comparable, V any](m map[K]V) []V {
 	}
 	return newList
 }
+
+func MapValsToPointerList[K comparable, V any](m map[K]V) []*V {
+	newList := make([]*V, len(m))
+	i := 0
+	for _, val := range m {
+		newList[i] = &val
+		i += 1
+	}
+	return newList
+}

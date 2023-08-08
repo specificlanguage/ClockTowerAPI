@@ -2,97 +2,157 @@
     {
       "role_name":  "Washerwoman",
       "description": "You start knowing that 1 of 2 players is a particular Townsfolk.",
-      "team": 0
+      "team": 0,
+      "firstNightPriority": 2,
+      "handler": {
+        "START_INFO": {
+          "players": 2,
+          "class": 0
+        }
+      }
     },
     {
       "role_name": "Librarian",
       "description": "You start knowing that 1 of 2 players is a particular Outsider. (Or that zero are in play.)",
-      "team": 0
+      "team": 0,
+      "firstNightPriority": 3,
+      "handler": {
+        "START_INFO": {
+          "players": 2,
+          "class": 1
+        }
+      }
     },
     {
       "role_name": "Investigator",
       "description": "You start knowing that 1 of 2 players is a particular Minion.",
-      "team": 0
+      "team": 0,
+      "firstNightPriority": 4,
+      "handler": {
+        "START_INFO": {
+          "players": 2,
+          "class": 2
+        }
+      }
     },
     {
       "role_name": "Chef",
       "description": "You start knowing how many pairs of evil players there are.",
-      "team": 0
+      "team": 0,
+      "firstNightPriority": 5,
+      "handler": {
+        "START_INFO": {
+          "number": true
+        }
+      }
     },
     {
       "role_name": "Empath",
       "description": "Each night, you learn how many of your 2 alive neighbors are evil.",
-      "team": 0
+      "team": 0,
+      "firstNightPriority": 6,
+      "handler": {}
     },
     {
       "role_name": "Fortune Teller",
       "description": "Each night, choose 2 players: you learn if either is a Demon. There is a good player that registers as a Demon to you.",
-      "team": 0
+      "team": 0,
+      "firstNightPriority": 7,
+      "handler": {}
     },
     {
       "role_name": "Undertaker",
       "description": "Each night*, you learn which character died by execution today.",
-      "team": 0
+      "team": 0,
+      "otherNightPriority": 9,
+      "handler": {}
     },
     {
       "role_name": "Monk",
       "description": "Each night*, choose a player (not yourself): they are safe from the Demon tonight.",
-      "team": 0
+      "otherNightPriority": 2,
+      "team": 0,
+      "handler": {}
     },
     {
       "role_name": "Slayer",
       "description": "Once per game, during the day, publicly choose a player: if they are the Demon, they die.",
-      "team": 0
+      "team": 0,
+      "handler": {}
     },
     {
       "role_name": "Soldier",
       "description": "You are safe from the Demon.",
-      "team": 0
+      "team": 0,
+      "handler": {}
     },
     {
       "role_name": "Ravenskeeper",
       "description": "If you die at night, you are woken to choose a player: you learn their character.",
-      "team": 0
+      "team": 0,
+      "otherNightPriority": 5,
+      "handler": {}
     },
     {
       "role_name": "Virgin",
       "description": "The 1st time you are nominated, if the nominator is a Townsfolk, they are executed immediately.",
-      "team": 0
+      "team": 0,
+      "handler": {}
     },
     {
       "role_name": "Mayor",
       "description": "If only 3 players live & no execution occurs, your team wins. If you die at night, another player might die instead.",
-      "team": 0
+      "team": 0,
+      "handler": {}
     },
     {
       "role_name": "Butler",
       "description": "Each night, choose a player (not yourself): tomorrow, you may only vote if they are voting too.",
-      "team": 1
+      "team": 1,
+      "handler": {}
     },
     {
       "role_name": "Saint",
       "description": "If you die by execution, your team loses.",
-      "team": 1
+      "team": 1,
+      "handler": {}
     },
     {
       "role_name": "Recluse",
       "description": "You might register as evil & as a Minion or Demon, even if dead.",
-      "team": 1
+      "team": 1,
+      "handler": {}
     },
     {
       "role_name": "Drunk",
       "description": "You do not know you are the Drunk. You think you are a Townsfolk character, but you are not.",
-      "team": 1
+      "team": 1,
+      "handler": {}
     },
     {
       "role_name": "Poisoner",
       "description": "Each night, choose a player: they are poisoned tonight and tomorrow day.",
-      "team": 2
+      "team": 2,
+      "firstNightPriority": 1,
+      "otherNightPriority": 1,
+      "handler": {
+        "NIGHT": {
+          "choose": {
+            "players": 1
+          },
+          "effect": {
+            "player:1": "poisoned"
+          }
+        }
+      }
     },
     {
       "role_name": "Spy",
       "description": "Each night, you see the Grimoire. You might register as good & as a Townsfolk or Outsider, even if dead.",
-      "team": 2
+      "team": 2,
+      "firstNightPriority": 9,
+      "otherNightPriority": 10,
+      "handler": {}
     },
     {
       "role_name": "Baron",
@@ -102,11 +162,23 @@
     {
       "role_name": "Scarlet Woman",
       "description": "If there are 5 or more players alive & the Demon dies, you become the Demon. (Travellers don't count)",
-      "team": 2
+      "team": 2,
+      "otherNightPriority": 3
     },
     {
       "role_name": "Imp",
       "description": "Each night*, choose a player: they die. If you kill yourself this way, a Minion becomes the Imp.",
-      "team": 3
+      "team": 3,
+      "otherNightPriority": 4,
+      "handler": {
+        "NIGHT_NOT_FIRST":{
+          "choose": {
+            "players": 1
+          },
+          "effect": {
+            "player:1": "death"
+          }
+        }
+      }
     }
 ]
