@@ -19,8 +19,9 @@ const (
 )
 
 const (
-	LOADING      = "LOADING"      // Default when entering room
-	GAME_LOBBY   = "LOBBY"        // Landing page on lobby
+	LOADING      = "LOADING" // Default when entering room
+	GAME_LOBBY   = "LOBBY"   // Landing page on lobby
+	GAME_START   = "GAME_START"
 	NIGHT        = "NIGHT"        // Most logic will happen at night
 	POSTNIGHT    = "POSTNIGHT"    // Should be used for post
 	DAY          = "DAY"          // General deliberation for the day
@@ -55,7 +56,7 @@ type Player struct {
 // - a channel for outgoing messages, which should only be connected to the Dispatcher
 type GameSess struct {
 	Code        string
-	Clients     map[uuid.UUID]Player
+	Clients     map[uuid.UUID]*Player
 	InChannel   chan MessageFromClient // Generic info channel to send information to send. Will specify type later.
 	OutChannel  chan MessageToClient
 	Phase       string
@@ -98,13 +99,14 @@ func GameHandler(sess GameSess) {
 	for {
 		select {
 		case msg := <-sess.InChannel:
-			fmt.Println("Inbound", msg)
+			// fmt.Println("Inbound", msg)
 			if msg.Message.Type == "GAME_SETUP" {
 				if err := setupGame(msg.Message.Message, sess); err != nil {
 					fmt.Println("Error: ", err)
 				}
+			} else { // For debugging purposes
+				sess.OutChannel <- M(MESSAGE, gin.H{"type": msg.Message.Type, "message": msg.Message.Message}, MapToAnyMap(sess.Clients), sess.Code)
 			}
-			sess.OutChannel <- M(MESSAGE, gin.H{"type": msg.Message.Type, "message": msg.Message.Message}, MapToAnyMap(sess.Clients), sess.Code)
 		}
 	}
 }
@@ -172,13 +174,24 @@ func GetConnectedPlayers(sess GameSess) map[string]any {
 	return players
 }
 
-func GetNonStorytellerPlayers(sess GameSess) map[uuid.UUID]Player {
-	players := make(map[uuid.UUID]Player)
+func GetNonStorytellerPlayers(sess GameSess) map[uuid.UUID]*Player {
+	players := make(map[uuid.UUID]*Player)
 	for _, player := range sess.Clients {
 		if player.IsStoryteller {
 			continue
 		} else if player.IsConnected {
 			players[player.UUID] = player
+		}
+	}
+	return players
+}
+
+func GetStoryteller(sess GameSess) map[uuid.UUID]any {
+	players := make(map[uuid.UUID]any)
+	for _, player := range sess.Clients {
+		if player.IsStoryteller {
+			players[player.UUID] = *player
+			return players
 		}
 	}
 	return players

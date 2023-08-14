@@ -59,9 +59,9 @@ func InteractEndpoint(ctx *gin.Context) {
 		}
 
 		if clientUUID != gameEntry.StorytellerUUID {
-			gameSess.Clients[clientUUID] = game.Player{UUID: clientUUID, Name: name, IsConnected: true}
+			gameSess.Clients[clientUUID] = &game.Player{UUID: clientUUID, Name: name, IsConnected: true}
 		} else {
-			gameSess.Clients[clientUUID] = game.Player{UUID: clientUUID, Name: name, IsConnected: true, IsStoryteller: true}
+			gameSess.Clients[clientUUID] = &game.Player{UUID: clientUUID, Name: name, IsConnected: true, IsStoryteller: true}
 		}
 	}
 

@@ -81,26 +81,37 @@ func GetAllRoles() ([]Role, error) {
 }
 
 // ShuffleRoles - Shuffles roles and gives each role to a different player.
-func ShuffleRoles(roleNames []string, players []*Player) {
+func ShuffleRoles(roleNames []string, sess GameSess) {
 
 	n := len(roleNames)
-	// Shuffle roleNames in list
-	for i := n - 1; i > 0; i-- {
-		j := rand.Intn(i + 1)
-		roleNames[i], roleNames[j] = roleNames[j], roleNames[i]
-	}
+	allRoles, err := GetAllRoles()
+	usedRoles := make([]Role, n)
 
-	roles, err := GetAllRoles()
 	if err != nil {
 		fmt.Printf("Error when shuffling roleNames: %s", err)
 	}
 
+	// Associate role names with roles
 	for i, name := range roleNames {
-		for _, role := range roles {
+		for _, role := range allRoles {
+
 			if role.RoleName == name {
-				players[i].Role = role
-				fmt.Printf(players[i].Role.RoleName)
+				usedRoles[i] = role
+				break
 			}
 		}
+	}
+
+	// Shuffle roles in list
+	for i := 0; i < n-2; i++ {
+		j := rand.Intn(n-i) + i
+		usedRoles[i], usedRoles[j] = usedRoles[j], usedRoles[i]
+	}
+
+	i := 0
+	// Distribute roles to players
+	for _, player := range GetNonStorytellerPlayers(sess) {
+		player.Role = usedRoles[i]
+		i++
 	}
 }
