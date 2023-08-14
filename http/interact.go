@@ -11,6 +11,9 @@ import (
 
 func InteractEndpoint(ctx *gin.Context) {
 	gameID := ctx.Param("id")
+	if gameID == "" {
+		gameID = ctx.Query("id")
+	}
 	name := ctx.Query("name")
 	if gameID[len(gameID)-1:] == "/" {
 		gameID = gameID[:len(gameID)-1]

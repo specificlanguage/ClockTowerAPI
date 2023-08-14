@@ -15,6 +15,7 @@ var letters = []rune("1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 type CreateGameBody struct {
 	ScriptId string `json:"scriptID"`
+	GameCode string `json:"gameCode"`
 }
 
 func generateGameCode() string {
@@ -36,7 +37,15 @@ func CreateGameEndpoint(ctx *gin.Context) {
 		return
 	}
 
-	gameCode := generateGameCode()
+	gameCode := createGame.GameCode
+	if gameCode == "" {
+		gameCode = generateGameCode()
+	}
+
+	if _, ok := Games[gameCode]; !ok {
+		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
+	}
+
 	game_db := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
 	result := db.GameDB.Create(&game_db)
 

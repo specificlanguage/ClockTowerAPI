@@ -3,7 +3,7 @@ package game
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"math/rand"
 	"os"
 )
@@ -88,7 +88,7 @@ func ShuffleRoles(roleNames []string, sess GameSess) {
 	usedRoles := make([]Role, n)
 
 	if err != nil {
-		fmt.Printf("Error when shuffling roleNames: %s", err)
+		log.Printf("Error when shuffling roleNames: %s", err)
 	}
 
 	// Associate role names with roles
