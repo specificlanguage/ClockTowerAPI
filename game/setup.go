@@ -12,7 +12,7 @@ type GameSetupMessage struct {
 }
 
 type RoleInfo struct {
-	PlayerName string
+	PlayerUUID string
 	RoleName   string
 }
 
@@ -33,7 +33,7 @@ func setupGame(message json.RawMessage, sess GameSess) error {
 	for _, player := range sess.Clients {
 		// fmt.Println(player.Role.RoleName)
 		if !player.IsStoryteller && player.IsConnected {
-			roleInfoList[i] = RoleInfo{player.Name, player.Role.RoleName}
+			roleInfoList[i] = RoleInfo{player.UUID.String(), player.Role.RoleName}
 			i++
 			sess.OutChannel <- M("GAME_SETUP", gin.H{
 				"role":    player.Role.RoleName,
