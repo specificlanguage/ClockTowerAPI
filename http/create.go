@@ -43,11 +43,17 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	}
 
 	if _, ok := Games[gameCode]; !ok {
-		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
+		log.Printf("%sCould not create game %s, game ID collision", logger.Red, gameCode)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})
+		return
 	}
 
 	game_db := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
-	result := db.GameDB.Create(&game_db)
+	if result := db.GameDB.Create(&game_db); result.Error != nil {
+		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})
+		return
+	}
 
 	inChannel := make(chan game.MessageFromClient)
 	outChannel := OutChannel
@@ -60,10 +66,5 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	// Make router recognize this game exists
 	Games[gameCode] = sess
 
-	if result.Error != nil {
-		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})
-	} else {
-		ctx.JSON(http.StatusOK, gin.H{"code": gameCode, "script": "Trouble Brewing", "storyteller": storyUUID})
-	}
+	ctx.JSON(http.StatusOK, gin.H{"code": gameCode, "script": "Trouble Brewing", "storyteller": storyUUID})
 }
