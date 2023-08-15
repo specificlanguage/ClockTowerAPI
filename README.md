@@ -11,6 +11,17 @@ This repository is a Go backend intended for three main purposes:
 
 At the moment this is nowhere near complete, and generally this is just be a long-term side project for me (and my friends') own enjoyment.
 
+## Build
+
+To attempt to serve a backend:
+1. Create an `.env` file with `PG_URL=[postgres URL]`, `PGUSER=[postgres username]`, and `PGPASS=[postgres password]`
+2. Run `go install`
+3. Run `go build ClockTowerAPI`
+4. Run the main executable.
+
+While tests are still being made, you can query both the API and the Websocket. Most websocket messages are of the form `{type: MESSAGE, message: { [any JSON here] }`
+
+
 TODOs:
 - [x] Reliable websocket communication
 - [x] Role shuffling
