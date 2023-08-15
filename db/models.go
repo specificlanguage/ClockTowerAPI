@@ -7,13 +7,14 @@ import (
 
 type Game struct {
 	ID              uint
-	Code            string `gorm:"unique"`
+	Code            string
 	ScriptID        string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	StorytellerUUID uuid.UUID
 	Players         []GamePlayer `gorm:"foreignKey:GameID"`
 	Phase           uint         `gorm:"default:0"` // Will be a lookup in the phase list
+	DBUUID          uuid.UUID
 	// TODO: possibly convert Phase into a Redis cache for easy updating on night phases
 }
 

@@ -61,6 +61,7 @@ type GameSess struct {
 	OutChannel  chan MessageToClient
 	Phase       string
 	GameHandler map[string]interface{}
+	DBUUID      uuid.UUID
 }
 
 // MessageToClient represents an outgoing message from the server to the client.

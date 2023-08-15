@@ -43,22 +43,32 @@ func CreateGameEndpoint(ctx *gin.Context) {
 	}
 
 	if _, ok := Games[gameCode]; !ok {
-		log.Printf("%sCould not create game %s, game ID collision", logger.Red, gameCode)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})
-		return
+		gameCode = generateGameCode()
 	}
 
-	game_db := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID)}
+	// Regenerate game code if already using, somehow
+	game_db := db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID), DBUUID: uuid.New()}
+
 	if result := db.GameDB.Create(&game_db); result.Error != nil {
 		log.Printf("%sDB Write Error: %s", logger.Red, result.Error.Error())
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})
-		return
+
+		// TODO: delete entry from table if game is too old (~1 day, say?)
+
+		gameCode = generateGameCode()
+		// Attempt reassigning game code
+		if _, ok := Games[gameCode]; ok {
+			game_db = db.Game{Code: gameCode, ScriptID: createGame.ScriptId, StorytellerUUID: uuid.MustParse(storyUUID), DBUUID: uuid.New()}
+			if result := db.GameDB.Create(&game_db); result.Error != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create game"})
+				return
+			}
+		}
 	}
 
 	inChannel := make(chan game.MessageFromClient)
 	outChannel := OutChannel
 
-	sess := game.GameSess{Code: gameCode, Clients: make(map[uuid.UUID]*game.Player), InChannel: inChannel, OutChannel: outChannel, Phase: game.GAME_LOBBY}
+	sess := game.GameSess{Code: gameCode, Clients: make(map[uuid.UUID]*game.Player), InChannel: inChannel, OutChannel: outChannel, Phase: game.GAME_LOBBY, DBUUID: game_db.DBUUID}
 
 	// Start one thread for game logic
 	go game.GameHandler(sess)
