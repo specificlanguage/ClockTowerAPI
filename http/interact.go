@@ -44,6 +44,13 @@ func InteractEndpoint(ctx *gin.Context) {
 		if cl.IsConnected {
 			ctx.JSON(400, gin.H{"message": "Already connected"})
 		}
+
+		err := Mel.HandleRequestWithKeys(ctx.Writer, ctx.Request, gin.H{"uuid": clientUUID, "gid": gameID, "game": gameSess, "name": name})
+		if err != nil {
+			ctx.JSON(http.StatusConflict, gin.H{"message": "Could not instantiate Websocket"})
+			return
+		}
+
 		// Reconnected
 		cl.IsConnected = true
 		gameSess.Clients[clientUUID] = cl
@@ -61,6 +68,13 @@ func InteractEndpoint(ctx *gin.Context) {
 			return
 		}
 
+		// Attempt websocket connect
+		err := Mel.HandleRequestWithKeys(ctx.Writer, ctx.Request, gin.H{"uuid": clientUUID, "gid": gameID, "game": gameSess, "name": name})
+		if err != nil {
+			ctx.JSON(http.StatusConflict, gin.H{"message": "Could not instantiate Websocket"})
+			return
+		}
+
 		if clientUUID != gameEntry.StorytellerUUID {
 			gameSess.Clients[clientUUID] = &game.Player{UUID: clientUUID, Name: name, IsConnected: true}
 		} else {
@@ -69,9 +83,4 @@ func InteractEndpoint(ctx *gin.Context) {
 	}
 
 	// Upgrades request
-	err := Mel.HandleRequestWithKeys(ctx.Writer, ctx.Request, gin.H{"uuid": clientUUID, "gid": gameID, "game": gameSess, "name": name})
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not instantiate Websocket"})
-		return
-	}
 }

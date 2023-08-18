@@ -2,7 +2,6 @@ package game
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"log"
@@ -103,7 +102,9 @@ func GameHandler(sess GameSess) {
 			// fmt.Println("Inbound", msg)
 			if msg.Message.Type == "GAME_SETUP" {
 				if err := setupGame(msg.Message.Message, sess); err != nil {
-					fmt.Println("Error: ", err)
+					sess.OutChannel <- M(ERROR, gin.H{
+						"message": "incorrect player count",
+					}, GetStoryteller(sess), sess.Code)
 				}
 			} else { // For debugging purposes
 				sess.OutChannel <- M(MESSAGE, gin.H{"type": msg.Message.Type, "message": msg.Message.Message}, MapToAnyMap(sess.Clients), sess.Code)

@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
 )
@@ -12,8 +13,8 @@ type GameSetupMessage struct {
 }
 
 type RoleInfo struct {
-	PlayerUUID string
-	RoleName   string
+	PlayerUUID string `json:"uuid"`
+	RoleName   string `json:"role"`
 }
 
 func setupGame(message json.RawMessage, sess GameSess) error {
@@ -21,6 +22,11 @@ func setupGame(message json.RawMessage, sess GameSess) error {
 	err := json.Unmarshal(message, &setupData)
 	if err != nil {
 		log.Fatalln("error:", err)
+	}
+
+	// Check GameSess has enough players for the setup.
+	if setupData.NumPlayers != len(setupData.Roles) || setupData.NumPlayers != len(GetConnectedPlayers(sess))-1 {
+		return errors.New("not enough players")
 	}
 
 	ShuffleRoles(setupData.Roles, sess)
